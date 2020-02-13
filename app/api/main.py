@@ -3,7 +3,7 @@ from app import mongo
 from flask import jsonify
 from bson import json_util
 from app.api.helpers import validate_url
-
+from celery_app.task_receiver import scrap_image
 
 import datetime
 
@@ -29,14 +29,18 @@ def web_images_status(url):
 @validate_url
 def web_images_download(url):
     """Images download request"""
+
     image = {
         "url": url,
         "status": "Accepted",
         "images": [],
         "date": datetime.datetime.utcnow()
     }
+
     # try ?
     post_id = mongo.db.images.insert_one(image).inserted_id
+    scrap_image.delay(url)
+
     return str(post_id), 201
 
 

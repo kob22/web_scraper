@@ -3,3 +3,4 @@ pymongo
 validators
 pytest
 mongomock
+Celery

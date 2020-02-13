@@ -12,6 +12,9 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # todo json ENCODER for mongo response?
+    # todo logging
+
     from app.api import bp as api_bp
     app.register_blueprint(api_bp)
 
