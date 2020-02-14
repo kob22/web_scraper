@@ -4,6 +4,7 @@ validators
 pytest
 mongomock
 Celery
+redis
 requests
 bs4
 lxml==4.5.0
