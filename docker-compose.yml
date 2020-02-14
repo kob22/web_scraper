@@ -1,0 +1,33 @@
+version: "3"
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - redis
+      - database
+    volumes:
+      - .:/app
+  redis:
+    image: redis
+  worker_1:
+    build:
+      context: .
+    hostname: worker_1
+    entrypoint: celery
+    command: -A celery_app.celery_app worker --concurrency=10 --loglevel=info
+    volumes:
+      - .:/app
+    links:
+      - redis
+    depends_on:
+      - redis
+  database:
+    hostname: mongo
+    image: mongo:latest
+    ports:
+      - "27017:27017"

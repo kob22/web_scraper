@@ -9,4 +9,4 @@ class Config(object):
     DEBUG = True
     TESTING = True
     JSONIFY_PRETTYPRINT_REGULAR = True
-    MONGO_URI = "mongodb://0.0.0.0:27017/myDatabase"
+    MONGO_URI = "mongodb://mongo:27017/myDatabase"
