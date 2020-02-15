@@ -111,12 +111,12 @@ def scrap_image(self, url, UID):
         else:
             images.add(domain_img + '/' + img_link)
 
-    img_path = Config.basedir + '/images/' + UID + '/'
-    temp_img_path = Config.basedir + '/temp_images/'
+    img_path = Config.BASEDIR + '/images/' + UID + '/'
+    temp_img_path = Config.BASEDIR + '/temp_images/'
     os.makedirs(img_path, exist_ok=True)
     os.makedirs(temp_img_path, exist_ok=True)
 
-    zip_path = Config.zip_path + UID
+    zip_path = Config.ZIP_PATH + UID
     update_status_images(UID, "DOWNLOADING")
     download_img = chord(download_image.s(x_url, temp_img_path, img_path) for x_url in images)(zip_images.s(img_path, zip_path, UID))
 

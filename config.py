@@ -2,8 +2,8 @@ import os
 
 
 class Config(object):
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    zip_path = basedir + '/app/api/zip/'
+    BASEDIR = os.path.abspath(os.path.dirname(__file__))
+    ZIP_PATH = BASEDIR + '/app/api/zip/'
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     ENV = 'development'
     DEBUG = True

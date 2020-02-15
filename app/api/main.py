@@ -3,7 +3,6 @@ from app import mongo
 from flask import jsonify, send_from_directory, current_app
 from bson import json_util
 from app.api.helpers import validate_url
-from config import Config
 from celery_app.task_receiver import scrap_image, scrap_text
 from bson.objectid import ObjectId
 import datetime
@@ -53,7 +52,7 @@ def images_download(data):
             if txt['status'] == 'FINISHED':
                 filename = str(txt['_id']) + '.zip'
 
-                return send_from_directory(Config['zip_path'], filename, as_attachment=True )
+                return send_from_directory(current_app.config['ZIP_PATH'], filename, as_attachment=True )
             elif txt['status'] != 'FAILED':
                 return jsonify({"error": "NOT READY"}), 400
             else:

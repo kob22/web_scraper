@@ -8,7 +8,7 @@ from pymongo import MongoClient
 class TestConfig():
     """Config for test app"""
 
-    basedir = os.path.abspath(os.path.dirname(__file__))
+    BASEDIR = os.path.abspath(os.path.dirname(__file__))
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
     ENV = 'development'
     DEBUG = True

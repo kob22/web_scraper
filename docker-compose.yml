@@ -9,7 +9,7 @@ services:
       - "5000:5000"
     depends_on:
       - redis
-      - database
+      - mongo
     volumes:
       - .:/app
   redis:
@@ -26,7 +26,7 @@ services:
       - redis
     depends_on:
       - redis
-  database:
+  mongo:
     hostname: mongo
     image: mongo:latest
     ports:
