@@ -27,7 +27,7 @@ def images_status(data):
 
     if '/' in data:
         img = mongo.db.images.find({"url": data}, {"url":1, "status": 1, "_id":0}).sort("date", -1).limit(1)
-    elif len(data)==24:
+    elif len(data) == 24:
         img = mongo.db.images.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":0})
     else:
         return jsonify({"error": "URL or ID not found"}), 400
@@ -86,7 +86,7 @@ def web_text_status(data):
 
     if '/' in data:
         web_text = mongo.db.web_text.find({"url": data}, {"url":1, "status": 1, "_id":0}).sort("date", -1).limit(1)
-    elif len(data)==24:
+    elif len(data) == 24:
         web_text = mongo.db.web_text.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":0})
     else:
         return jsonify({"error": "URL or ID not found"}), 400
@@ -101,16 +101,16 @@ def web_text_download(data):
     """Download text from saved website"""
 
     if '/' in data:
-        web_text = mongo.db.web_text.find({"url": data, }, {"url":1, "status": 1, "_id":0}).sort("date", -1).limit(1)
+        web_text = mongo.db.web_text.find({"url": data, }, {"url":1, "status": 1, "text": 1, "_id":0, }).sort("date", -1).limit(1)
     elif len(data) == 24:
-        web_text = mongo.db.web_text.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":0})
+        web_text = mongo.db.web_text.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "text": 1, "_id":0, })
     else:
         return jsonify({"error": "URL or ID not found"}), 400
 
     if web_text.count() > 0:
         for txt in web_text:
             if txt['status'] == 'FINISHED':
-                return json_util.dumps(txt)
+                return json_util.dumps(txt['text'])
             elif txt['status'] != 'FAILED':
                 return jsonify({"error": "NOT READY"}), 400
             else:

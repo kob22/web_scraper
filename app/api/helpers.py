@@ -10,7 +10,6 @@ def validate_url(f):
     def decorated_function(url):
         if val_url(url) is not True:
             # todo return code error
-            print('jestem')
             return make_response(jsonify({"error": "URL is incorrect"}), 400)
         return f(url)
     return decorated_function

@@ -14,6 +14,14 @@ import uuid
 import imghdr
 
 
+def urljoin(*args):
+    """
+    Joins given arguments into an url. Trailing but not leading slashes are
+    stripped for each argument.
+    """
+
+    return "/".join(map(lambda x: str(x).rstrip('/'), args))
+
 def on_fail_txt(self, exc, task_id, args, kwargs, einfo):
     """Update status when task fail"""
     update_status_text(args[1], 'FAILED')
@@ -27,17 +35,20 @@ def on_retry_txt(self, exc, task_id, args, kwargs, einfo):
 # todo
 def on_fail_img(self, exc, task_id, args, kwargs, einfo):
     """Update status when task fail"""
+    logging.info(args)
     update_status_images(args[1], 'FAILED')
 
 
 def on_retry_img(self, exc, task_id, args, kwargs, einfo):
     """Update status when taks is waiting for retry"""
+    logging.info(args)
     update_status_images(args[1], 'RETRY')
 
 
 @app.task(bind=True, default_retry_delay=30, autoretry_for=(Exception,), max_retries=5, on_failure=on_fail_img, on_retry=on_retry_img)
-def zip_images(self, res, path_zip, output_path, UID):
+def zip_images(self, res, UID, path_zip, output_path):
     update_status_images(UID, "ZIPPING")
+
     try:
         shutil.make_archive(output_path, 'zip', path_zip)
     except Exception:
@@ -46,7 +57,8 @@ def zip_images(self, res, path_zip, output_path, UID):
 
 
 @app.task(bind=True, default_retry_delay=30, autoretry_for=(Exception,), max_retries=5, on_failure=on_fail_img, on_retry=on_retry_img)
-def download_image(self, url, temp, path_save):
+def download_image(self, url, UID, temp, path_save):
+
     """Download image with request get, checks image type """
 
     img_data = requests.get(url, stream=True)
@@ -57,7 +69,7 @@ def download_image(self, url, temp, path_save):
 
         # generate unique name
         uid = uuid.uuid4()
-        temp_name = temp + uid.hex
+        temp_name = os.path.join(temp, uid.hex)
 
         # save image in temp dir
         with open(temp_name, 'wb') as img_file:
@@ -67,11 +79,11 @@ def download_image(self, url, temp, path_save):
         # check file type and remove if not img
         extension = imghdr.what(temp_name)
         if extension:
-            shutil.move(temp_name, path_save + uid.hex + '.' + extension)
+            shutil.move(temp_name, os.path.join(path_save, uid.hex + '.' + extension))
         else:
             os.remove(temp_name)
     elif img_data.status_code == 404:
-        logging.info('URL NOT FOUND' + url)
+        logging.info('URL NOT FOUND ' + url)
     else:
         logging.error(url)
         raise Exception
@@ -105,21 +117,20 @@ def scrap_image(self, url, UID):
         if re.match('(?:(?:https?|ftp)://)', img_link):
             images.add(img_link )
         elif img_link.startswith('//'):
-            images.add(domain_img + '/' + img_link[2:])
+            images.add(urljoin(domain_img, img_link[2:]))
         elif img_link.startswith('/'):
-            images.add(domain_img + img_link)
+            images.add(urljoin(domain_img, img_link))
         else:
-            images.add(domain_img + '/' + img_link)
+            images.add(urljoin(domain_img, img_link))
 
-    img_path = Config.BASEDIR + '/images/' + UID + '/'
-    temp_img_path = Config.BASEDIR + '/temp_images/'
+    img_path = os.path.join(Config.BASEDIR, 'images', UID)
+    temp_img_path = os.path.join(Config.BASEDIR, 'temp_images')
     os.makedirs(img_path, exist_ok=True)
     os.makedirs(temp_img_path, exist_ok=True)
 
-    zip_path = Config.ZIP_PATH + UID
+    zip_path = os.path.join(Config.ZIP_PATH, UID)
     update_status_images(UID, "DOWNLOADING")
-    download_img = chord(download_image.s(x_url, temp_img_path, img_path) for x_url in images)(zip_images.s(img_path, zip_path, UID))
-
+    download_img = chord(download_image.s(x_url, UID, temp_img_path, img_path) for x_url in images)(zip_images.s(UID, img_path, zip_path))
 
     return 0
 
