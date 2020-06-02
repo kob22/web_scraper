@@ -1,6 +1,7 @@
 from flask import Flask
-from config import Config
 from pymongo import MongoClient
+from config import Config
+
 
 mongo = MongoClient(Config.MONGO_URI)
 

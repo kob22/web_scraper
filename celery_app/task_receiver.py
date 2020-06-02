@@ -22,6 +22,7 @@ def urljoin(*args):
 
     return "/".join(map(lambda x: str(x).rstrip('/'), args))
 
+
 def on_fail_txt(self, exc, task_id, args, kwargs, einfo):
     """Update status when task fail"""
     update_status_text(args[1], 'FAILED')

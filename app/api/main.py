@@ -1,11 +1,11 @@
+import datetime
+from flask import jsonify, send_from_directory, current_app, make_response
+from bson import json_util
+from bson.objectid import ObjectId
+from app.api.helpers import validate_url
 from app.api import bp
 from app import mongo
-from flask import jsonify, send_from_directory, current_app
-from bson import json_util
-from app.api.helpers import validate_url
 from celery_app.task_receiver import scrap_image, scrap_text
-from bson.objectid import ObjectId
-import datetime
 
 
 @bp.route('/', methods=['GET'])
@@ -17,8 +17,12 @@ def index():
 def images_all():
     """Shows all queries"""
     images = mongo.db.images.find()
+    d = json_util.dumps(images)
+    # jsonify objectID
+    r = make_response( json_util.dumps(images) )
+    r.mimetype = 'application/json'
 
-    return json_util.dumps(images)
+    return r
 
 
 @bp.route('/images/status/<path:data>', methods=['GET'])
@@ -30,11 +34,14 @@ def images_status(data):
     elif len(data) == 24:
         img = mongo.db.images.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":0})
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
     if img.count() > 0:
-        return json_util.dumps(img)
+        # jsonify objectID
+        r = make_response(json_util.dumps(img))
+        r.mimetype = 'application/json'
+        return r
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
 
 
 @bp.route('/images/download/<path:data>', methods=['GET'])
@@ -46,19 +53,17 @@ def images_download(data):
     elif len(data) == 24:
         img = mongo.db.images.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":1})
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
     if img.count() > 0:
         for txt in img:
             if txt['status'] == 'FINISHED':
                 filename = str(txt['_id']) + '.zip'
-
-                return send_from_directory(current_app.config['ZIP_PATH'], filename, as_attachment=True )
-            elif txt['status'] != 'FAILED':
-                return jsonify({"error": "NOT READY"}), 400
-            else:
-                return jsonify({"error": "FAILED, Please Retry"}), 400
+                return send_from_directory(current_app.config['ZIP_PATH'], filename, as_attachment=True)
+            if txt['status'] != 'FAILED':
+                return make_response(jsonify({"error": "NOT READY"}), 400)
+            return make_response(jsonify({"error": "FAILED, Please Retry"}), 400)
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
 
 
 @bp.route('/images/scrap/<path:url>', methods=['POST'])
@@ -77,7 +82,7 @@ def web_images_scrap(url):
     post_id = mongo.db.images.insert_one(image).inserted_id
     scrap_image.delay(url, str(post_id))
 
-    return jsonify({"id": str(post_id)}), 201
+    return make_response(jsonify({"id": str(post_id)}), 201)
 
 
 @bp.route('/text/status/<path:data>', methods=['GET'])
@@ -89,11 +94,14 @@ def web_text_status(data):
     elif len(data) == 24:
         web_text = mongo.db.web_text.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "_id":0})
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
     if web_text.count() > 0:
-        return json_util.dumps(web_text)
-    else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        # jsonify objectID
+        r = make_response(json_util.dumps(web_text))
+        r.mimetype = 'application/json'
+        return r
+
+    return make_response(jsonify({"error": "URL or ID not found"}), 400)
 
 
 @bp.route('/text/download/<path:data>', methods=['GET'])
@@ -105,18 +113,22 @@ def web_text_download(data):
     elif len(data) == 24:
         web_text = mongo.db.web_text.find({'_id': ObjectId(data)}, {"url":1, "status": 1, "text": 1, "_id":0, })
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
 
     if web_text.count() > 0:
         for txt in web_text:
             if txt['status'] == 'FINISHED':
-                return json_util.dumps(txt['text'])
-            elif txt['status'] != 'FAILED':
-                return jsonify({"error": "NOT READY"}), 400
-            else:
-                return jsonify({"error": "FAILED, Please Retry"}), 400
+                # jsonify objectID
+                r = make_response(json_util.dumps(txt['text']))
+                r.mimetype = 'application/json'
+                return r
+
+            if txt['status'] != 'FAILED':
+                return make_response(jsonify({"error": "NOT READY"}), 400)
+
+            return make_response(jsonify({"error": "FAILED, Please Retry"}), 400)
     else:
-        return jsonify({"error": "URL or ID not found"}), 400
+        return make_response(jsonify({"error": "URL or ID not found"}), 400)
 
 
 @bp.route('/text/all', methods=['GET'])
@@ -124,7 +136,9 @@ def web_text_all():
     """Shows all queries"""
     web_text = mongo.db.web_text.find()
 
-    return json_util.dumps(web_text)
+    r = make_response(json_util.dumps(web_text))
+    r.mimetype = 'application/json'
+    return r
 
 
 @bp.route('/text/scrap/<path:url>', methods=['POST'])
@@ -142,6 +156,4 @@ def web_text_scrap(url):
 
     scrap_text.delay(url, str(post_id))
 
-    return jsonify({"id": str(post_id)}), 201
-
-
+    return make_response(jsonify({"id": str(post_id)}), 201)
